@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smobflow — Agent Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#0a0a0b;
+    --surface:#111113;
+    --surface2:#1a1a1e;
+    --surface3:#222228;
+    --border:#2a2a32;
+    --border2:#333340;
+    --text:#f0f0f4;
+    --muted:#7a7a8c;
+    --accent:#6c63ff;
+    --accent2:#8b85ff;
+    --green:#22c55e;
+    --amber:#f59e0b;
+    --red:#ef4444;
+    --blue:#3b82f6;
+    --radius:10px;
+    --radius-lg:14px;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+  /* Layout */
+  .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-mark{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;}
+  .logo-name{font-size:15px;font-weight:600;letter-spacing:-0.3px;}
+  .logo-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .badge-loc{font-size:11px;font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+  .lang-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+  .lang-btn{padding:4px 10px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+  .lang-btn.active{background:var(--accent);color:#fff;}
+  .main{display:flex;flex:1;overflow:hidden;}
+  /* Sidebar */
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding:16px 0;}
+  .nav-section{padding:0 12px;margin-bottom:4px;}
+  .nav-label{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;padding:8px 8px 4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:400;color:var(--muted);cursor:pointer;transition:all 0.15s;margin-bottom:1px;}
+  .nav-item:hover{background:var(--surface2);color:var(--text);}
+  .nav-item.active{background:var(--surface3);color:var(--text);font-weight:500;}
+  .nav-item .icon{font-size:15px;width:18px;text-align:center;}
+  .nav-badge{margin-left:auto;font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:10px;font-family:'DM Mono',monospace;}
+  /* Content */
+  .content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .panel{display:none;flex:1;overflow:hidden;flex-direction:column;}
+  .panel.active{display:flex;}
+  .panel-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .panel-title{font-size:18px;font-weight:600;letter-spacing:-0.3px;}
+  .panel-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .panel-body{flex:1;overflow-y:auto;padding:20px 24px;}
+  /* Stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;}
+  .stat-label{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+  .stat-value{font-size:28px;font-weight:600;letter-spacing:-1px;line-height:1;}
+  .stat-delta{font-size:11px;color:var(--muted);margin-top:6px;}
+  .stat-delta.up{color:var(--green);}
+  .stat-delta.warn{color:var(--amber);}
+  /* Table */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  .table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);}
+  .table-toolbar-title{font-size:13px;font-weight:500;}
+  .search-box{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;padding:6px 12px;border-radius:7px;outline:none;width:200px;}
+  .search-box::placeholder{color:var(--muted);}
+  .search-box:focus{border-color:var(--accent);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2);}
+  td{padding:12px 14px;border-top:1px solid var(--border);vertical-align:middle;}
+  tr:hover td{background:var(--surface2);}
+  .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+  .contact-cell{display:flex;align-items:center;gap:10px;}
+  .contact-info .name{font-weight:500;font-size:13px;}
+  .contact-info .email{font-size:11px;color:var(--muted);}
+  .tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:5px;font-weight:500;margin-right:3px;}
+  .tag-green{background:rgba(34,197,94,0.15);color:var(--green);}
+  .tag-amber{background:rgba(245,158,11,0.15);color:var(--amber);}
+  .tag-blue{background:rgba(59,130,246,0.15);color:var(--blue);}
+  .tag-purple{background:rgba(108,99,255,0.15);color:var(--accent2);}
+  .tag-red{background:rgba(239,68,68,0.15);color:var(--red);}
+  .tag-gray{background:rgba(122,122,140,0.15);color:var(--muted);}
+  .mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent2);}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--surface2);color:var(--text);}
+  .btn-sm{padding:5px 10px;font-size:11px;}
+  /* Chat */
+  .chat-layout{display:flex;flex:1;overflow:hidden;}
+  .chat-sidebar{width:260px;border-right:1px solid var(--border);background:var(--surface);overflow-y:auto;flex-shrink:0;}
+  .chat-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+  .chat-item:hover,.chat-item.active{background:var(--surface2);}
+  .chat-item-header{display:flex;justify-content:space-between;margin-bottom:3px;}
+  .chat-item-name{font-size:13px;font-weight:500;}
+  .chat-item-time{font-size:10px;color:var(--muted);}
+  .chat-item-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .unread-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:3px;}
+  .chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .chat-messages{flex:1;overflow-y:auto;padding:20px;}
+  .msg{margin-bottom:14px;display:flex;gap:10px;}
+  .msg.outbound{flex-direction:row-reverse;}
+  .msg-bubble{max-width:65%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;}
+  .msg.inbound .msg-bubble{background:var(--surface2);border:1px solid var(--border);}
+  .msg.outbound .msg-bubble{background:var(--accent);color:#fff;}
+  .msg-meta{font-size:10px;color:var(--muted);margin-top:4px;}
+  .chat-input-bar{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;}
+  .chat-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;padding:10px 14px;border-radius:9px;outline:none;resize:none;}
+  .chat-input:focus{border-color:var(--accent);}
+  /* Pipeline */
+  .pipeline-board{display:flex;gap:14px;overflow-x:auto;flex:1;padding-bottom:8px;}
+  .pipeline-col{min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;overflow:hidden;}
+  .pipeline-col-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .pipeline-col-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+  .pipeline-count{font-size:11px;font-family:'DM Mono',monospace;background:var(--surface3);color:var(--muted);padding:2px 7px;border-radius:5px;}
+  .pipeline-cards{flex:1;overflow-y:auto;padding:10px;}
+  .opp-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;}
+  .opp-card:hover{border-color:var(--accent);}
+  .opp-name{font-size:12px;font-weight:500;margin-bottom:4px;}
+  .opp-contact{font-size:11px;color:var(--muted);}
+  .opp-value{font-size:13px;font-weight:600;color:var(--green);margin-top:8px;}
+  .opp-days{font-size:10px;color:var(--muted);margin-top:4px;}
+  /* Agent chat */
+  .agent-layout{display:flex;flex-direction:column;height:100%;}
+  .agent-messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;}
+  .agent-msg{display:flex;gap:12px;max-width:80%;}
+  .agent-msg.user{flex-direction:row-reverse;align-self:flex-end;}
+  .agent-avatar{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+  .agent-avatar.user-av{background:var(--surface3);border:1px solid var(--border);}
+  .agent-bubble{padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.6;}
+  .agent-msg.assistant .agent-bubble{background:var(--surface);border:1px solid var(--border);}
+  .agent-msg.user .agent-bubble{background:var(--accent);color:#fff;}
+  .agent-input-bar{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;}
+  .agent-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;padding:12px 16px;border-radius:10px;outline:none;resize:none;min-height:48px;max-height:120px;}
+  .agent-input:focus{border-color:var(--accent);}
+  .send-btn{width:44px;height:44px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;}
+  .send-btn:hover{background:var(--accent2);}
+  .send-btn:disabled{background:var(--surface3);color:var(--muted);cursor:not-allowed;}
+  .typing{display:flex;gap:4px;align-items:center;padding:4px 0;}
+  .typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:0.2s;}
+  .typing span:nth-child(3){animation-delay:0.4s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+  /* Config panel */
+  .config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
+  .config-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .form-group{margin-bottom:14px;}
+  .form-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+  .form-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'DM Mono',monospace;padding:9px 12px;border-radius:8px;outline:none;}
+  .form-input:focus{border-color:var(--accent);}
+  .form-hint{font-size:11px;color:var(--muted);margin-top:5px;}
+  .saved-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--green);background:rgba(34,197,94,0.1);padding:4px 10px;border-radius:6px;}
+  /* Alert */
+  .alert{padding:12px 16px;border-radius:9px;font-size:12px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;}
+  .alert-warn{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);color:var(--amber);}
+  .alert-info{background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.2);color:var(--accent2);}
+  /* Loading */
+  .loading{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:60px;color:var(--muted);}
+  .spinner{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:5px;height:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+  /* Confirm modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;display:none;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;max-width:400px;width:90%;}
+  .modal-title{font-size:15px;font-weight:600;margin-bottom:8px;}
+  .modal-body{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="logo-name">Smobflow</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="lang-es" onclick="setLang('es')">ES</button>
+        <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
+      <span class="badge-loc" id="loc-badge">ncjCtzK5dyAdb1KWKCty</span>
+      <div class="status-dot" id="status-dot"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="nav-section">
+        <div class="nav-label" data-es="Principal" data-en="Main">Principal</div>
+        <div class="nav-item active" onclick="showPanel('agent')" id="nav-agent">
+          <span class="icon">⚡</span> <span data-es="Agente IA" data-en="AI Agent">Agente IA</span>
+        </div>
+        <div class="nav-item" onclick="showPanel('leads')" id="nav-leads">
+          <span class="icon">👥</span> <span data-es="Leads" data-en="Leads">Leads</span>
+          <span class="nav-badge" id="leads-count">—</span>
+        </div>
+        <div class="nav-item" onclick="showPanel('conversations')" id="nav-conversations">
+          <span class="icon">💬</span> <span data-es="Conversaciones" data-en="Conversations">Conversaciones</span>
+          <span class="nav-badge" id="conv-count">—</span>
+        </div>
+        <div class="nav-item" onclick="showPanel('pipeline')" id="nav-pipeline">
+          <span class="icon">📊</span> <span data-es="Pipeline" data-en="Pipeline">Pipeline</span>
+        </div>
+      </div>
+      <div class="nav-section" style="margin-top:auto;">
+        <div class="nav-label" data-es="Sistema" data-en="System">Sistema</div>
+        <div class="nav-item" onclick="showPanel('config')" id="nav-config">
+          <span class="icon">⚙️</span> <span data-es="Configuración" data-en="Settings">Configuración</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- AGENT PANEL -->
+      <div class="panel active agent-layout" id="panel-agent">
+        <div class="panel-header" style="flex-shrink:0;">
+          <div class="panel-title" data-es="Agente Smobflow" data-en="Smobflow Agent">Agente Smobflow</div>
+          <div class="panel-sub" data-es="Habla con tu CRM en lenguaje natural" data-en="Talk to your CRM in natural language">Habla con tu CRM en lenguaje natural</div>
+        </div>
+        <div class="agent-messages" id="agent-messages">
+          <div class="agent-msg assistant">
+            <div class="agent-avatar">S</div>
+            <div>
+              <div class="agent-bubble" id="welcome-msg">
+                Hola. Soy tu agente de Smobflow conectado a tu cuenta de GHL.<br><br>
+                Puedo ayudarte a:<br>
+                • Ver y gestionar tus leads<br>
+                • Revisar conversaciones sin responder<br>
+                • Actualizar oportunidades en el pipeline<br>
+                • Ver citas y calendario<br><br>
+                ¿Qué necesitas?
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="agent-input-bar">
+          <textarea class="agent-input" id="agent-input" placeholder="Ej: ¿Cuántos leads nuevos tengo esta semana?" rows="1" onkeydown="handleAgentKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendAgentMessage()">↑</button>
+        </div>
+      </div>
+
+      <!-- LEADS PANEL -->
+      <div class="panel" id="panel-leads">
+        <div class="panel-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="panel-title" data-es="Leads" data-en="Leads">Leads</div>
+              <div class="panel-sub" data-es="Contactos en tu cuenta GHL" data-en="Contacts in your GHL account">Contactos en tu cuenta GHL</div>
+            </div>
+            <button class="btn btn-primary" onclick="loadLeads()">↻ <span data-es="Actualizar" data-en="Refresh">Actualizar</span></button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="stats-grid" id="leads-stats">
+            <div class="stat-card"><div class="stat-label" data-es="Total" data-en="Total">Total</div><div class="stat-value" id="s-total">—</div></div>
+            <div class="stat-card"><div class="stat-label" data-es="Últimos 7 días" data-en="Last 7 days">Últimos 7 días</div><div class="stat-value" id="s-new">—</div></div>
+            <div class="stat-card"><div class="stat-label" data-es="Con teléfono" data-en="With phone">Con teléfono</div><div class="stat-value" id="s-phone">—</div></div>
+            <div class="stat-card"><div class="stat-label" data-es="Sin tags" data-en="No tags">Sin tags</div><div class="stat-value" id="s-notags">—</div><div class="stat-delta warn" id="s-notags-delta"></div></div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-toolbar">
+              <span class="table-toolbar-title" data-es="Contactos" data-en="Contacts">Contactos</span>
+              <input class="search-box" placeholder="Buscar..." id="leads-search" oninput="filterLeads(this.value)" />
+            </div>
+            <div id="leads-table-body"><div class="loading"><div class="spinner"></div><span data-es="Cargando leads..." data-en="Loading leads...">Cargando leads...</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONVERSATIONS PANEL -->
+      <div class="panel" id="panel-conversations">
+        <div class="chat-layout">
+          <div class="chat-sidebar" id="conv-list">
+            <div class="loading"><div class="spinner"></div></div>
+          </div>
+          <div class="chat-main">
+            <div class="panel-header" style="flex-shrink:0;">
+              <div class="panel-title" id="conv-contact-name">Selecciona una conversación</div>
+              <div class="panel-sub" id="conv-contact-phone">—</div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <div style="text-align:center;color:var(--muted);font-size:13px;padding:40px;">Selecciona una conversación a la izquierda</div>
+            </div>
+            <div class="chat-input-bar" id="chat-input-bar">
+              <textarea class="chat-input" id="chat-input-msg" placeholder="Escribe un mensaje..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+              <button class="btn btn-primary btn-sm" onclick="sendChatMessage()" id="chat-send-btn">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIPELINE PANEL -->
+      <div class="panel" id="panel-pipeline">
+        <div class="panel-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="panel-title" data-es="Pipeline" data-en="Pipeline">Pipeline</div>
+              <div class="panel-sub" data-es="Oportunidades activas" data-en="Active opportunities">Oportunidades activas</div>
+            </div>
+            <button class="btn btn-primary" onclick="loadPipeline()">↻ <span data-es="Actualizar" data-en="Refresh">Actualizar</span></button>
+          </div>
+        </div>
+        <div class="panel-body" style="overflow-x:auto;">
+          <div class="pipeline-board" id="pipeline-board">
+            <div class="loading"><div class="spinner"></div><span>Cargando pipeline...</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIG PANEL -->
+      <div class="panel" id="panel-config">
+        <div class="panel-header">
+          <div class="panel-title" data-es="Configuración" data-en="Settings">Configuración</div>
+          <div class="panel-sub" data-es="Credenciales GHL y preferencias" data-en="GHL credentials and preferences">Credenciales GHL y preferencias</div>
+        </div>
+        <div class="panel-body">
+          <div class="alert alert-warn">
+            ⚠️ <div data-es="Nunca compartas tu PIT token. Regéneralo en GHL → Settings → Private Integrations si fue expuesto." data-en="Never share your PIT token. Regenerate it in GHL → Settings → Private Integrations if exposed.">Nunca compartas tu PIT token. Regéneralo en GHL → Settings → Private Integrations si fue expuesto.</div>
+          </div>
+          <div class="config-card">
+            <div class="config-title">🔐 <span data-es="Autenticación GHL" data-en="GHL Authentication">Autenticación GHL</span></div>
+            <div class="form-group">
+              <label class="form-label" data-es="Private Integration Token (PIT)" data-en="Private Integration Token (PIT)">Private Integration Token (PIT)</label>
+              <input class="form-input" type="password" id="cfg-token" placeholder="pit-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+              <div class="form-hint" data-es="GHL → Settings → Private Integrations" data-en="GHL → Settings → Private Integrations">GHL → Settings → Private Integrations</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Location ID</label>
+              <input class="form-input" type="text" id="cfg-location" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx" />
+              <div class="form-hint" data-es="Visible en la URL de tu sub-cuenta" data-en="Visible in your sub-account URL">Visible en la URL de tu sub-cuenta</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Anthropic API Key</label>
+              <input class="form-input" type="password" id="cfg-anthropic" placeholder="sk-ant-..." />
+              <div class="form-hint"><a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a> → API Keys</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button class="btn btn-primary" onclick="saveConfig()"><span data-es="Guardar configuración" data-en="Save settings">Guardar configuración</span></button>
+              <span id="saved-indicator" style="display:none;" class="saved-badge">✓ <span data-es="Guardado" data-en="Saved">Guardado</span></span>
+            </div>
+          </div>
+          <div class="config-card">
+            <div class="config-title">📋 <span data-es="Instrucciones de instalación" data-en="Installation instructions">Instrucciones de instalación</span></div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+              <strong style="color:var(--text);">Claude Desktop:</strong><br>
+              <code style="font-family:'DM Mono',monospace;font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:4px;">Claude → Settings → Developer → Edit Config</code>
+              <pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:11px;font-family:'DM Mono',monospace;margin-top:8px;overflow-x:auto;">{
+  "mcpServers": {
+    "smobflow-ghl": {
+      "url": "https://services.leadconnectorhq.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer TU_PIT_TOKEN",
+        "locationId": "TU_LOCATION_ID",
+        "Version": "2021-04-15"
+      }
+    }
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Confirmar acción</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-confirm-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Language ─────────────────────────────────────────────
+const LANG = { current: 'es' };
+
+const T = {
+  es: {
+    welcome: 'Hola. Soy tu agente de Smobflow conectado a tu cuenta de GHL.<br><br>Puedo ayudarte a:<br>• Ver y gestionar tus leads<br>• Revisar conversaciones sin responder<br>• Actualizar oportunidades en el pipeline<br>• Ver citas y calendario<br><br>¿Qué necesitas?',
+    agentPlaceholder: 'Ej: ¿Cuántos leads nuevos tengo esta semana?',
+    searchPlaceholder: 'Buscar...',
+    noToken: '⚙️ Configura tu Anthropic API Key en <strong>Configuración</strong> para activar el agente IA.',
+    selectConv: 'Selecciona una conversación a la izquierda',
+    noConvs: 'Sin conversaciones',
+    noMessages: 'Sin mensajes aún',
+    sendMsg: '¿Enviar mensaje?',
+    sendConfirm: 'Vas a enviar al lead: ',
+    noResults: 'Sin resultados',
+    loading: 'Cargando...',
+    noTag: 'Sin tag',
+    noName: 'Sin nombre',
+    staleLabel: ' días en etapa',
+    empty: 'Vacío',
+    noPipelines: 'Sin pipelines configurados',
+    configureToken: 'Configura tu token en',
+    settings: 'Configuración',
+    unclassified: '⚠ Sin clasificar',
+    send: 'Enviar',
+    cancel: 'Cancelar',
+    confirm: 'Confirmar',
+  },
+  en: {
+    welcome: 'Hi. I\'m your Smobflow agent connected to your GHL account.<br><br>I can help you:<br>• View and manage your leads<br>• Review unanswered conversations<br>• Update pipeline opportunities<br>• View appointments and calendar<br><br>What do you need?',
+    agentPlaceholder: 'E.g. How many new leads do I have this week?',
+    searchPlaceholder: 'Search...',
+    noToken: '⚙️ Configure your Anthropic API Key in <strong>Settings</strong> to activate the AI agent.',
+    selectConv: 'Select a conversation on the left',
+    noConvs: 'No conversations',
+    noMessages: 'No messages yet',
+    sendMsg: 'Send message?',
+    sendConfirm: 'You\'re sending to lead: ',
+    noResults: 'No results',
+    loading: 'Loading...',
+    noTag: 'No tag',
+    noName: 'No name',
+    staleLabel: ' days in stage',
+    empty: 'Empty',
+    noPipelines: 'No pipelines configured',
+    configureToken: 'Configure your token in',
+    settings: 'Settings',
+    unclassified: '⚠ Unclassified',
+    send: 'Send',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+  }
+};
+
+function t(key) { return T[LANG.current][key] || T['es'][key]; }
+
+function setLang(lang) {
+  LANG.current = lang;
+  localStorage.setItem('smob_lang', lang);
+  document.getElementById('lang-es').classList.toggle('active', lang==='es');
+  document.getElementById('lang-en').classList.toggle('active', lang==='en');
+  // Update all data-es/data-en elements
+  document.querySelectorAll('[data-es]').forEach(el => {
+    el.textContent = el.getAttribute('data-'+lang) || el.getAttribute('data-es');
+  });
+  // Update placeholders
+  const ai = document.getElementById('agent-input');
+  if(ai) ai.placeholder = t('agentPlaceholder');
+  const ls = document.getElementById('leads-search');
+  if(ls) ls.placeholder = t('searchPlaceholder');
+  // Update welcome message
+  const wm = document.getElementById('welcome-msg');
+  if(wm) wm.innerHTML = t('welcome');
+  // Update modal buttons
+  document.querySelectorAll('.btn-ghost').forEach(b => { if(b.textContent.trim()==='Cancelar'||b.textContent.trim()==='Cancel') b.textContent = t('cancel'); });
+  document.getElementById('modal-confirm-btn').textContent = t('confirm');
+}
+
+
+const STATE = {
+  token: '',
+  locationId: 'ncjCtzK5dyAdb1KWKCty',
+  anthropicKey: '',
+  leads: [],
+  conversations: [],
+  activeConvId: null,
+  activeConvContactId: null,
+  pipelines: [],
+  opportunities: []
+};
+
+// ─── Init ─────────────────────────────────────────────────
+window.onload = () => {
+  loadConfig();
+  if (STATE.token) {
+    loadLeads();
+    loadConversations();
+    loadPipeline();
+  }
+};
+
+function loadConfig() {
+  STATE.token = localStorage.getItem('smob_token') || '';
+  STATE.locationId = localStorage.getItem('smob_loc') || 'ncjCtzK5dyAdb1KWKCty';
+  STATE.anthropicKey = localStorage.getItem('smob_ant') || '';
+  const savedLang = localStorage.getItem('smob_lang') || 'es';
+  document.getElementById('cfg-token').value = STATE.token;
+  document.getElementById('cfg-location').value = STATE.locationId;
+  document.getElementById('cfg-anthropic').value = STATE.anthropicKey;
+  document.getElementById('loc-badge').textContent = STATE.locationId.slice(0,12)+'...';
+  setLang(savedLang);
+}
+
+function saveConfig() {
+  STATE.token = document.getElementById('cfg-token').value.trim();
+  STATE.locationId = document.getElementById('cfg-location').value.trim();
+  STATE.anthropicKey = document.getElementById('cfg-anthropic').value.trim();
+  localStorage.setItem('smob_token', STATE.token);
+  localStorage.setItem('smob_loc', STATE.locationId);
+  localStorage.setItem('smob_ant', STATE.anthropicKey);
+  document.getElementById('loc-badge').textContent = STATE.locationId.slice(0,12)+'...';
+  const ind = document.getElementById('saved-indicator');
+  ind.style.display = 'inline-flex';
+  setTimeout(()=>ind.style.display='none', 2500);
+  loadLeads(); loadConversations(); loadPipeline();
+}
+
+// ─── Navigation ───────────────────────────────────────────
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  if(id==='agent') document.getElementById('panel-agent').style.display='flex';
+}
+
+// ─── GHL API Helper ───────────────────────────────────────
+async function ghlAPI(endpoint, method='GET', body=null) {
+  if (!STATE.token) throw new Error('No token configurado');
+  const opts = {
+    method,
+    headers: {
+      'Authorization': 'Bearer '+STATE.token,
+      'Version': '2021-04-15',
+      'Content-Type': 'application/json',
+      'locationId': STATE.locationId
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  // Try MCP first for supported tools, fallback to REST API
+  const res = await fetch('https://services.leadconnectorhq.com'+endpoint, opts);
+  if (!res.ok) throw new Error('API Error '+res.status);
+  return res.json();
+}
+
+async function ghlMCP(tool, input) {
+  if (!STATE.token) throw new Error('No token configurado');
+  const res = await fetch('https://services.leadconnectorhq.com/mcp/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer '+STATE.token,
+      'locationId': STATE.locationId,
+      'Version': '2021-04-15'
+    },
+    body: JSON.stringify({ tool, input: {...input, locationId: STATE.locationId} })
+  });
+  if (!res.ok) throw new Error('MCP Error '+res.status);
+  return res.json();
+}
+
+// ─── LEADS ───────────────────────────────────────────────
+async function loadLeads() {
+  document.getElementById('leads-table-body').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>';
+  try {
+    // Try MCP first
+    let contacts = [];
+    try {
+      const r = await ghlMCP('contacts_get-contacts', { limit: 100 });
+      contacts = r.contacts || r.data?.contacts || [];
+    } catch {
+      // Fallback: REST API v2
+      const r = await ghlAPI('/contacts/?locationId='+STATE.locationId+'&limit=100');
+      contacts = r.contacts || [];
+    }
+    STATE.leads = contacts;
+    renderLeads(contacts);
+    updateLeadStats(contacts);
+    document.getElementById('leads-count').textContent = contacts.length;
+  } catch(e) {
+    document.getElementById('leads-table-body').innerHTML = renderError(e.message);
+  }
+}
+
+function updateLeadStats(contacts) {
+  document.getElementById('s-total').textContent = contacts.length;
+  const week = Date.now() - 7*24*60*60*1000;
+  const recent = contacts.filter(c=>new Date(c.dateAdded||c.createdAt||0)>week).length;
+  document.getElementById('s-new').textContent = recent;
+  document.getElementById('s-phone').textContent = contacts.filter(c=>c.phone).length;
+  const noTags = contacts.filter(c=>!c.tags||!c.tags.length).length;
+  document.getElementById('s-notags').textContent = noTags;
+  if(noTags>0) document.getElementById('s-notags-delta').textContent = '⚠ Sin clasificar';
+}
+
+function filterLeads(q) {
+  const filtered = STATE.leads.filter(c=>{
+    const s = ((c.firstName||'')+(c.lastName||'')+(c.email||'')+(c.phone||'')).toLowerCase();
+    return s.includes(q.toLowerCase());
+  });
+  renderLeads(filtered);
+}
+
+function renderLeads(contacts) {
+  if(!contacts.length){
+    document.getElementById('leads-table-body').innerHTML = '<div class="loading" style="padding:40px;"><span style="color:var(--muted);">Sin resultados</span></div>';
+    return;
+  }
+  const colors = ['#6c63ff','#22c55e','#f59e0b','#3b82f6','#ef4444','#ec4899'];
+  const rows = contacts.map((c,i)=>{
+    const name = [c.firstName,c.lastName].filter(Boolean).join(' ')||'Sin nombre';
+    const initials = ((c.firstName||'')[0]||(c.email||'U')[0]).toUpperCase();
+    const color = colors[i%colors.length];
+    const tags = (c.tags||[]).slice(0,3).map(t=>`<span class="tag tag-purple">${t}</span>`).join('') || '<span class="tag tag-gray">Sin tag</span>';
+    const date = c.dateAdded ? new Date(c.dateAdded).toLocaleDateString('es-MX',{month:'short',day:'numeric'}) : '—';
+    return `<tr>
+      <td><div class="contact-cell">
+        <div class="avatar" style="background:${color}22;color:${color};">${initials}</div>
+        <div class="contact-info"><div class="name">${name}</div><div class="email">${c.email||'—'}</div></div>
+      </div></td>
+      <td class="mono">${c.phone||'—'}</td>
+      <td>${tags}</td>
+      <td class="mono">${date}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openContact('${c.id}','${name}')">Ver</button></td>
+    </tr>`;
+  });
+  document.getElementById('leads-table-body').innerHTML = `
+    <table>
+      <thead><tr><th>Contacto</th><th>Teléfono</th><th>Tags</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+}
+
+function openContact(id, name) {
+  showPanel('agent');
+  appendAgentMessage('user', `Dame el detalle del contacto: ${name} (ID: ${id})`);
+  runAgentQuery(`Busca y muéstrame todos los datos del contacto con ID: ${id}. Nombre: ${name}. Incluye tags, teléfono, email, y cualquier nota disponible.`);
+}
+
+// ─── CONVERSATIONS ────────────────────────────────────────
+async function loadConversations() {
+  document.getElementById('conv-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    let convs = [];
+    try {
+      const r = await ghlMCP('conversations_search-conversation', { limit: 30 });
+      convs = r.conversations || r.data?.conversations || [];
+    } catch {
+      const r = await ghlAPI('/conversations/search?locationId='+STATE.locationId+'&limit=30');
+      convs = r.conversations || [];
+    }
+    STATE.conversations = convs;
+    renderConvList(convs);
+    const unread = convs.filter(c=>c.unreadCount>0||!c.lastMessageDate).length;
+    document.getElementById('conv-count').textContent = unread||convs.length;
+  } catch(e) {
+    document.getElementById('conv-list').innerHTML = `<div style="padding:16px;font-size:12px;color:var(--red);">${e.message}</div>`;
+  }
+}
+
+function renderConvList(convs) {
+  if(!convs.length){
+    document.getElementById('conv-list').innerHTML = '<div style="padding:16px;font-size:12px;color:var(--muted);">Sin conversaciones</div>';
+    return;
+  }
+  document.getElementById('conv-list').innerHTML = convs.map(c=>{
+    const name = c.fullName||c.contactName||'Desconocido';
+    const preview = c.lastMessageBody||c.lastMessage||'Sin mensajes';
+    const time = c.lastMessageDate ? new Date(c.lastMessageDate).toLocaleDateString('es-MX',{month:'short',day:'numeric'}) : '';
+    const unread = c.unreadCount > 0;
+    return `<div class="chat-item" onclick="openConversation('${c.id}','${name}','${(c.phone||c.contactPhone||'').replace(/'/g,'')}','${c.contactId||''}')">
+      <div class="chat-item-header">
+        <span class="chat-item-name">${name}</span>
+        <div style="display:flex;align-items:center;gap:6px;">${unread?'<div class="unread-dot"></div>':''}<span class="chat-item-time">${time}</span></div>
+      </div>
+      <div class="chat-item-preview">${preview.slice(0,60)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function openConversation(convId, name, phone, contactId) {
+  STATE.activeConvId = convId;
+  STATE.activeConvContactId = contactId;
+  document.getElementById('conv-contact-name').textContent = name;
+  document.getElementById('conv-contact-phone').textContent = phone||'—';
+  document.querySelectorAll('.chat-item').forEach(el=>el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('chat-messages').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    let msgs = [];
+    try {
+      const r = await ghlMCP('conversations_get-messages', { conversationId: convId });
+      msgs = r.messages || r.data?.messages || [];
+    } catch {
+      const r = await ghlAPI('/conversations/'+convId+'/messages');
+      msgs = r.messages || [];
+    }
+    renderMessages(msgs);
+  } catch(e) {
+    document.getElementById('chat-messages').innerHTML = `<div style="padding:20px;font-size:12px;color:var(--red);">${e.message}</div>`;
+  }
+}
+
+function renderMessages(msgs) {
+  if(!msgs.length){
+    document.getElementById('chat-messages').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:40px;">Sin mensajes aún</div>';
+    return;
+  }
+  document.getElementById('chat-messages').innerHTML = msgs.map(m=>{
+    const out = m.direction==='outbound'||m.type==='outbound';
+    const time = m.dateAdded ? new Date(m.dateAdded).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="msg ${out?'outbound':'inbound'}">
+      <div>
+        <div class="msg-bubble">${m.body||m.message||''}</div>
+        <div class="msg-meta" style="${out?'text-align:right':''}">${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const el = document.getElementById('chat-messages');
+  el.scrollTop = el.scrollHeight;
+}
+
+function handleChatKey(e) {
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatMessage();}
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input-msg');
+  const msg = input.value.trim();
+  if(!msg||!STATE.activeConvId) return;
+  showConfirm(
+    '¿Enviar mensaje?',
+    `Vas a enviar al lead: "<strong>${msg}</strong>"`,
+    async ()=>{
+      input.value = '';
+      try {
+        await ghlMCP('conversations_send-a-new-message', { conversationId: STATE.activeConvId, message: msg, type: 'SMS' });
+        await openConversation(STATE.activeConvId, document.getElementById('conv-contact-name').textContent, '', STATE.activeConvContactId);
+      } catch(e) {
+        alert('Error enviando: '+e.message);
+      }
+    }
+  );
+}
+
+// ─── PIPELINE ────────────────────────────────────────────
+async function loadPipeline() {
+  document.getElementById('pipeline-board').innerHTML = '<div class="loading"><div class="spinner"></div><span>Cargando...</span></div>';
+  try {
+    let pipelines = [], opportunities = [];
+    try {
+      const [pr, or] = await Promise.all([
+        ghlMCP('opportunities_get-pipelines', {}),
+        ghlMCP('opportunities_search-opportunity', { limit: 100 })
+      ]);
+      pipelines = pr.pipelines || pr.data?.pipelines || [];
+      opportunities = or.opportunities || or.data?.opportunities || [];
+    } catch {
+      const [pr, or] = await Promise.all([
+        ghlAPI('/opportunities/pipelines?locationId='+STATE.locationId),
+        ghlAPI('/opportunities/search?location_id='+STATE.locationId+'&limit=100')
+      ]);
+      pipelines = pr.pipelines || [];
+      opportunities = or.opportunities || [];
+    }
+    STATE.pipelines = pipelines;
+    STATE.opportunities = opportunities;
+    renderPipeline(pipelines, opportunities);
+  } catch(e) {
+    document.getElementById('pipeline-board').innerHTML = renderError(e.message);
+  }
+}
+
+function renderPipeline(pipelines, opps) {
+  if(!pipelines.length){
+    document.getElementById('pipeline-board').innerHTML = '<div style="color:var(--muted);font-size:13px;">Sin pipelines configurados</div>';
+    return;
+  }
+  const pipeline = pipelines[0];
+  const stages = pipeline.stages||[];
+  const cols = stages.map(stage=>{
+    const stageOpps = opps.filter(o=>o.pipelineStageId===stage.id);
+    const total = stageOpps.reduce((s,o)=>s+(o.monetaryValue||0),0);
+    const cards = stageOpps.map(o=>{
+      const days = o.lastStatusChangeAt ? Math.floor((Date.now()-new Date(o.lastStatusChangeAt))/(86400000)) : 0;
+      const stale = days > 7;
+      return `<div class="opp-card" style="${stale?'border-color:var(--amber)':''}">
+        <div class="opp-name">${o.name||'Sin nombre'}</div>
+        <div class="opp-contact">${o.contact?.name||o.contactName||'—'}</div>
+        <div class="opp-value">$${(o.monetaryValue||0).toLocaleString()}</div>
+        <div class="opp-days" style="${stale?'color:var(--amber)':''}">
+          ${stale?'⚠ ':''}${days} días en etapa
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="pipeline-col">
+      <div class="pipeline-col-header">
+        <span class="pipeline-col-title">${stage.name}</span>
+        <span class="pipeline-count">${stageOpps.length}</span>
+      </div>
+      <div class="pipeline-cards">
+        ${cards||'<div style="font-size:11px;color:var(--muted);padding:8px;">Vacío</div>'}
+        ${total>0?`<div style="font-size:11px;color:var(--green);padding:4px 0;text-align:right;">$${total.toLocaleString()}</div>`:''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('pipeline-board').innerHTML = cols.join('');
+}
+
+// ─── AGENT ───────────────────────────────────────────────
+function handleAgentKey(e) {
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAgentMessage();}
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight,120)+'px';
+}
+
+async function sendAgentMessage() {
+  const input = document.getElementById('agent-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  input.style.height = 'auto';
+  appendAgentMessage('user', msg);
+  await runAgentQuery(msg);
+}
+
+function appendAgentMessage(role, content) {
+  const container = document.getElementById('agent-messages');
+  const isUser = role==='user';
+  const div = document.createElement('div');
+  div.className = 'agent-msg '+(isUser?'user':'assistant');
+  div.innerHTML = `
+    <div class="agent-avatar ${isUser?'user-av':''}">${isUser?'👤':'S'}</div>
+    <div><div class="agent-bubble" id="msg-${Date.now()}">${content}</div></div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div.querySelector('.agent-bubble');
+}
+
+async function runAgentQuery(userMsg) {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+
+  // Show typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'agent-msg assistant';
+  typingDiv.innerHTML = `<div class="agent-avatar">S</div><div><div class="agent-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  document.getElementById('agent-messages').appendChild(typingDiv);
+  document.getElementById('agent-messages').scrollTop = 99999;
+
+  try {
+    if(!STATE.token) {
+      typingDiv.remove();
+      appendAgentMessage('assistant', '⚙️ Configura tu token GHL en <strong>Configuración</strong> para activar el agente.');
+      btn.disabled = false;
+      return;
+    }
+
+    const systemPrompt = `Eres el agente de Smobflow, un asistente de CRM para contratistas de servicios para el hogar.
+Tienes acceso al GHL de este cliente vía MCP y API REST.
+Location ID: ${STATE.locationId}
+Token: disponible
+
+Datos en memoria:
+- Leads cargados: ${STATE.leads.length}
+- Conversaciones: ${STATE.conversations.length}
+- Oportunidades: ${STATE.opportunities.length}
+- Pipelines: ${STATE.pipelines.map(p=>p.name).join(', ')||'ninguno'}
+
+Leads recientes (primeros 10): ${JSON.stringify(STATE.leads.slice(0,10).map(c=>({name:[c.firstName,c.lastName].filter(Boolean).join(' '),phone:c.phone,email:c.email,tags:c.tags,dateAdded:c.dateAdded})))}
+
+Responde en español, de forma directa y útil. Si te piden hacer una acción que modifica datos, advierte que debes confirmar antes de ejecutar. Sé específico con números y nombres.`;
+
+    const response = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    const data = await response.json();
+    typingDiv.remove();
+    const text = data.content?.[0]?.text || 'Sin respuesta.';
+    appendAgentMessage('assistant', text.replace(/\n/g,'<br>'));
+
+  } catch(e) {
+    typingDiv.remove();
+    appendAgentMessage('assistant', `Error: ${e.message}`);
+  }
+  btn.disabled = false;
+  document.getElementById('agent-messages').scrollTop = 99999;
+}
+
+// ─── CONFIRM MODAL ───────────────────────────────────────
+let _confirmCallback = null;
+function showConfirm(title, body, cb) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  _confirmCallback = cb;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  _confirmCallback = null;
+}
+document.getElementById('modal-confirm-btn').onclick = ()=>{
+  closeModal();
+  if(_confirmCallback) _confirmCallback();
+};
+
+// ─── UTILS ───────────────────────────────────────────────
+function renderError(msg) {
+  return `<div style="padding:24px;text-align:center;">
+    <div style="color:var(--red);font-size:13px;margin-bottom:12px;">⚠ ${msg}</div>
+    <div style="font-size:12px;color:var(--muted);">Configura tu token en <strong style="color:var(--text);">Configuración</strong></div>
+  </div>`;
+}
+</script>
+</body>
+</html>
