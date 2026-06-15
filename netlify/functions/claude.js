@@ -10,7 +10,9 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, system } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const messages = body.messages || [];
+    const system = body.system || '';
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -22,15 +24,17 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
-        system,
-        messages
+        system: system,
+        messages: messages
       })
     });
 
     const data = await response.json();
+    console.log('Anthropic response:', JSON.stringify(data));
     return { statusCode: 200, headers, body: JSON.stringify(data) };
 
   } catch (err) {
+    console.log('Error:', err.message);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
