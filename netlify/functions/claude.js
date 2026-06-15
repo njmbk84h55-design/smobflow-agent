@@ -13,10 +13,10 @@ exports.handler = async (event) => {
 
   try {
     const { messages, system } = JSON.parse(event.body);
-    const apiKey = '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';
+    const apiKey = process.env.ANTHROPIC_API_KEY;
 
     const payload = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1000,
       system,
       messages
