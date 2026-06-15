@@ -16,7 +16,7 @@ exports.handler = async (event) => {
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
     const payload = JSON.stringify({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-5-20251001',
       max_tokens: 1000,
       system,
       messages
